@@ -17,6 +17,10 @@ export class PaymentService {
   ) {
   }
 
+  async create(payment) {
+    return await this.repo.save(payment)
+  }
+
   async sendMail(payment) {
 
     await this.mailerService.sendMail({
