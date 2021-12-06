@@ -4,6 +4,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { IUser } from './interfaces/user.interface';
 import { TypeOrmCrudService } from "@nestjsx/crud-typeorm";
 import { MailerService } from '@nest-modules/mailer';
+import {Repository} from "typeorm";
 
 function randomString(len) {
   const charSet =
@@ -17,12 +18,11 @@ function randomString(len) {
 }
 
 @Injectable()
-export class UserService extends TypeOrmCrudService<User> {
-  constructor(@InjectRepository(User) repo,
+export class UserService {
+  constructor(@InjectRepository(User)
+              private readonly repo: Repository<User>,
               private mailerService: MailerService
-  ) {
-    super(repo);
-  }
+  ) {}
 
   async findByToken(token) {
     return await this.repo.findOne({

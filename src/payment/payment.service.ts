@@ -6,14 +6,15 @@ import { Interval } from "@nestjs/schedule";
 import { Transaction } from "../transaction/entities/transaction.entity";
 import { TransactionService } from "../transaction/transaction.service";
 import { MailerService } from "@nest-modules/mailer";
+import {Repository} from "typeorm";
 
 @Injectable()
-export class PaymentService extends TypeOrmCrudService<Payment> {
-  constructor(@InjectRepository(Payment) repo,
+export class PaymentService {
+  constructor(@InjectRepository(Payment)
+              private readonly repo: Repository<Payment>,
               private readonly transactionService: TransactionService,
               private mailerService: MailerService
   ) {
-    super(repo);
   }
 
   async sendMail(payment) {

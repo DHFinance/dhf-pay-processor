@@ -7,19 +7,7 @@ import { ClientsModule, Transport } from "@nestjs/microservices";
 import { TransactionModule } from "../transaction/transaction.module";
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Payment]), TransactionModule, ClientsModule.register([
-    {
-      name: 'PAYMENT_SERVICE',
-      transport: Transport.RMQ,
-      options: {
-        urls: ['amqps://tncqeoap:xg6g86QzZQw0SRnM8Zk6EZwu0_9wb9um@bonobo.rmq.cloudamqp.com/tncqeoap'],
-        queue: 'payment_queue',
-        queueOptions: {
-          durable: false
-        },
-      },
-    },
-  ]),],
+  imports: [TypeOrmModule.forFeature([Payment]), TransactionModule],
   controllers: [PaymentController],
   providers: [PaymentService],
   exports: [],
