@@ -43,12 +43,22 @@ export class PaymentService {
       relations: ['user'],
     });
     const updatedPayments = await Promise.all(payments.map(async (payment) => {
-      const transactions = await this.transactionService.find({
+      const casperTransactions = await this.transactionService.find({
         where: {
           payment: payment,
           status: 'success'
         }
       });
+      const fakeTransactions = await this.transactionService.find({
+        where: {
+          payment: payment,
+          status: 'fake_success'
+        }
+      });
+
+      const transactions = [...fakeTransactions, ...casperTransactions]
+
+      console.log(transactions)
 
       const getTransactionsTotal = () => {
         let counter = 0
@@ -57,10 +67,15 @@ export class PaymentService {
         })
         return counter
       }
+
+
+
       if (payment.status !== 'Paid') {
+        console.log(getTransactionsTotal() >= +payment.amount, getTransactionsTotal(), +payment.amount)
         if (getTransactionsTotal() >= +payment.amount) {
           payment.status = 'Paid'
           await this.sendMail(payment)
+          console.log(payment)
           return payment
         }
         if (getTransactionsTotal() !== +payment.amount && getTransactionsTotal() > 0) {
@@ -71,7 +86,6 @@ export class PaymentService {
       }
       return payment
     }))
-
     await this.repo.save(updatedPayments)
   }
 }
