@@ -18,23 +18,35 @@ export class TransactionService {
 
   async sendMail(transaction) {
 
-    await this.mailerService.sendMail({
-      to: transaction.email,
-      from: process.env.MAILER_EMAIL,
-      subject: 'Transaction status changed',
-      template: 'transaction-status-changed',
-      context: {
-        login: transaction.email,
-        email: transaction.email,
-        txHash: transaction.txHash,
-        status: transaction.status,
-      },
-    });
+    if (transaction.email) {
+      await this.mailerService.sendMail({
+        to: transaction.email,
+        from: process.env.MAILER_EMAIL,
+        subject: 'Transaction status changed',
+        template: 'transaction-status-changed',
+        context: {
+          login: transaction.email,
+          email: transaction.email,
+          txHash: transaction.txHash,
+          status: transaction.status,
+        },
+      });
+    }
   }
 
   async updateTransactions() {
     const transactions = await this.repo.find();
     const updateProcessingTransactions = await Promise.all(transactions.map(async (transaction) => {
+      if (transaction.status === 'fake_processing') {
+        const updatedTransaction = {
+          ...transaction,
+          status: 'fake_success',
+          updated: new Date()
+        }
+        console.log({ updatedTransaction })
+        await this.sendMail(updatedTransaction)
+        return updatedTransaction
+      }
       if (transaction.status === 'processing') {
         const res = await this.httpService.get(`https://event-store-api-clarity-testnet.make.services/deploys/${transaction.txHash}`).toPromise();
         if (res.data.data.errorMessage) {
