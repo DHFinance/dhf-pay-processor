@@ -20,14 +20,9 @@ export class PaymentController {
 
   @EventPattern('createOne')
   async createOne(data: any) {
-    console.log({data})
-    await this.paymentService.create(data).then(payment => {
-      console.log({payment})
-      return payment.id
-    }).catch((err) => {
-      console.log({err})
-      return new HttpException(err.response, HttpStatus.BAD_REQUEST);
-    })
+    const payment = await this.paymentService.create(data)
+    console.log({payment})
+    return payment.id
   }
 
 }
