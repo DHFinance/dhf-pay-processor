@@ -5,9 +5,10 @@ import { PaymentController } from './payment.controller';
 import { PaymentService } from './payment.service';
 import { ClientsModule, Transport } from "@nestjs/microservices";
 import { TransactionModule } from "../transaction/transaction.module";
+import {StoresModule} from "../stores/stores.module";
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Payment]), TransactionModule],
+  imports: [TypeOrmModule.forFeature([Payment]), TransactionModule, StoresModule],
   controllers: [PaymentController],
   providers: [PaymentService],
   exports: [],

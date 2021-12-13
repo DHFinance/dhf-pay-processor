@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import {HttpException, HttpStatus, Injectable} from '@nestjs/common';
 import { InjectRepository } from "@nestjs/typeorm";
 import { Payment } from "./entities/payment.entity";
 import { TypeOrmCrudService } from "@nestjsx/crud-typeorm";
@@ -7,30 +7,52 @@ import { Transaction } from "../transaction/entities/transaction.entity";
 import { TransactionService } from "../transaction/transaction.service";
 import { MailerService } from "@nest-modules/mailer";
 import {Repository} from "typeorm";
+import {StoresService} from "../stores/stores.service";
 
 @Injectable()
 export class PaymentService {
   constructor(@InjectRepository(Payment)
               private readonly repo: Repository<Payment>,
               private readonly transactionService: TransactionService,
+              private readonly storesService: StoresService,
               private mailerService: MailerService
   ) {
   }
 
   async create(payment) {
-    return await this.repo.save(payment)
+    console.log({dto: payment})
+    try {
+      const store = await this.storesService.findStore(payment.apiKey)
+      console.log({store})
+      if (store) {
+        const newPayment =  await this.repo.save({...payment, store})
+        console.log({newPayment})
+        return newPayment
+      }
+    } catch (err) {
+      throw new HttpException(err, HttpStatus.BAD_REQUEST);
+    }
+  }
+
+  async findByUser(userId) {
+    const userPayments = this.repo.find({
+      where: {
+        user: userId
+      }
+    })
+    return userPayments
   }
 
   async sendMail(payment) {
 
     await this.mailerService.sendMail({
-      to:  payment.user.email,
+      to:  payment.store.user.email,
       from: process.env.MAILER_EMAIL,
       subject: 'Payment status changed',
       template: 'payment-status-changed',
       context: {
-        login: payment.user.email,
-        email: payment.user.email,
+        login: payment.store.user.email,
+        email: payment.store.user.email,
         status: payment.status,
       },
     });
@@ -40,7 +62,7 @@ export class PaymentService {
   async updateStatus() {
     await this.transactionService.updateTransactions()
     const payments = await this.repo.find({
-      relations: ['user'],
+      relations: ['store'],
     });
     const updatedPayments = await Promise.all(payments.map(async (payment) => {
       const casperTransactions = await this.transactionService.find({
