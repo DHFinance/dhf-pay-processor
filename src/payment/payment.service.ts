@@ -8,6 +8,7 @@ import { TransactionService } from "../transaction/transaction.service";
 import { MailerService } from "@nest-modules/mailer";
 import {Repository} from "typeorm";
 import {StoresService} from "../stores/stores.service";
+import {HttpService} from "@nestjs/axios";
 
 @Injectable()
 export class PaymentService {
@@ -15,7 +16,8 @@ export class PaymentService {
               private readonly repo: Repository<Payment>,
               private readonly transactionService: TransactionService,
               private readonly storesService: StoresService,
-              private mailerService: MailerService
+              private mailerService: MailerService,
+              private httpService: HttpService
   ) {
   }
 
@@ -40,19 +42,23 @@ export class PaymentService {
     return userPayments
   }
 
-  async sendMail(payment) {
+  async sendMail(payment, email) {
+    console.log(payment.store.url)
+    const successCallback = await this.httpService.post(payment.store.url, payment).toPromise();
+    console.log(successCallback.data)
 
     await this.mailerService.sendMail({
-      to:  payment.store.user.email,
+      to:  email,
       from: process.env.MAILER_EMAIL,
       subject: 'Payment status changed',
       template: 'payment-status-changed',
       context: {
-        login: payment.store.user.email,
-        email: payment.store.user.email,
+        login: email,
+        email: email,
         status: payment.status,
       },
     });
+
   }
 
   @Interval(60000)
@@ -77,8 +83,6 @@ export class PaymentService {
 
       const transactions = [...fakeTransactions, ...casperTransactions]
 
-      console.log(transactions)
-
       const getTransactionsTotal = () => {
         let counter = 0
         transactions.forEach((transaction, i) => {
@@ -90,16 +94,26 @@ export class PaymentService {
 
 
       if (payment.status !== 'Paid') {
-        console.log(getTransactionsTotal() >= +payment.amount, getTransactionsTotal(), +payment.amount)
         if (getTransactionsTotal() >= +payment.amount) {
+          const store = await this.storesService.findOne({
+            where: {
+              id: payment.store.id
+            },
+            relations: ['user'],
+          });
           payment.status = 'Paid'
-          await this.sendMail(payment)
-          console.log(payment)
+          await this.sendMail(payment, store.user.email)
           return payment
         }
         if (getTransactionsTotal() !== +payment.amount && getTransactionsTotal() > 0) {
+          const store = await this.storesService.findOne({
+            where: {
+              id: payment.store.id
+            },
+            relations: ['user'],
+          });
           payment.status = 'Particularly_paid'
-          await this.sendMail(payment)
+          await this.sendMail(payment, store.user.email)
           return payment
         }
       }

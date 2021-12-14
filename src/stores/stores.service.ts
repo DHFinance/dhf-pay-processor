@@ -16,6 +16,7 @@ export class StoresService extends TypeOrmCrudService<Stores> {
         apiKey
       }
     })
+    const stores = await this.repo.find()
     if (store) {
       return store
     }
