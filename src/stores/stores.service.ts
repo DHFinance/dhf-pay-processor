@@ -11,13 +11,11 @@ export class StoresService extends TypeOrmCrudService<Stores> {
   }
 
   async findStore(apiKey) {
-    console.log({apiKey})
-    const store = this.repo.findOne({
+    const store = await this.repo.findOne({
       where: {
         apiKey
       }
     })
-    console.log({store})
     if (store) {
       return store
     }

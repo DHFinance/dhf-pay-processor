@@ -20,13 +20,10 @@ export class PaymentService {
   }
 
   async create(payment) {
-    console.log({dto: payment})
     try {
       const store = await this.storesService.findStore(payment.apiKey)
-      console.log({store})
       if (store) {
         const newPayment =  await this.repo.save({...payment, store})
-        console.log({newPayment})
         return newPayment
       }
     } catch (err) {
