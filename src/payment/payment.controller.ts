@@ -18,11 +18,12 @@ export class PaymentController {
     public readonly paymentService: PaymentService
   ) {}
 
+
   @EventPattern('createOne')
   async createOne(data: any) {
     const payment = await this.paymentService.create(data)
-    console.log({payment})
     return payment.id
+
   }
 
 }
