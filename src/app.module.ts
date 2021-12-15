@@ -22,6 +22,7 @@ const dotEnvPath = isProduction
         path: dotEnvPath,
       },
     ), //ci
+
     TypeOrmModule.forRootAsync({
       useFactory: (config: ConfigService) => {
         return {
@@ -38,10 +39,8 @@ const dotEnvPath = isProduction
         QAuth: true,
         port: 465,
         auth: {
-          // user: process.env.MAILER_EMAIL,
-          // pass: process.env.MAILER_PASSWORD,
-          user: 'caspers.mailer@gmail.com',
-          pass: 'BCf!rufxQeYF@KVD87s76',
+          user: process.env.MAILER_EMAIL,
+          pass: process.env.MAILER_PASSWORD,
         },
       },
       // transport: {
