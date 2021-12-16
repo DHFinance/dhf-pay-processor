@@ -16,8 +16,18 @@ export class TransactionService {
     return await this.repo.find(props)
   }
 
-  async sendMail(transaction) {
+  async findByUser(userId) {
+    return await this.repo.find({
+      where: {
+        payment: {
+          user: userId
+        }
+      }
+    })
 
+  }
+
+  async sendMail(transaction) {
     if (transaction.email) {
       await this.mailerService.sendMail({
         to: transaction.email,
@@ -43,7 +53,7 @@ export class TransactionService {
           status: 'fake_success',
           updated: new Date()
         }
-        console.log({ updatedTransaction })
+
         await this.sendMail(updatedTransaction)
         return updatedTransaction
       }
@@ -55,7 +65,6 @@ export class TransactionService {
             status: res.data.data.errorMessage,
             updated: res.data.data.timestamp
           }
-          console.log({ updatedTransaction })
           await this.sendMail(updatedTransaction)
           return updatedTransaction
         }
