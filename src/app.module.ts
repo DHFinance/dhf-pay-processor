@@ -14,6 +14,7 @@ const dotEnvPath = isProduction
   ? path.resolve(__dirname, '..', '.env.staging')
   : path.resolve(__dirname, '..', '.env');
 // console.log(process.env.npm_lifecycle_event);
+const env = require('dotenv').config().parsed
 @Module({
   imports: [
     ConfigModule.load(
@@ -39,19 +40,10 @@ const dotEnvPath = isProduction
         QAuth: true,
         port: 465,
         auth: {
-          user: process.env.MAILER_EMAIL,
-          pass: process.env.MAILER_PASSWORD,
+          user: env.MAILER_EMAIL,
+          pass: env.MAILER_PASSWORD,
         },
       },
-      // transport: {
-      //     host: 'smtp.yandex.ru',
-      //     auth: {
-      //       // user: process.env.MAILER_EMAIL,
-      //       // pass: process.env.MAILER_PASSWORD,
-      //       user: 'service-info@smartigy.ru',
-      //       pass: 'qweASDzxc123',
-      //     },
-      //   },
       template: {
         dir: __dirname + '/../src/mail-templates',
         adapter: new HandlebarsAdapter(), // or new PugAdapter()
