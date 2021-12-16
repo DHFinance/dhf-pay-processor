@@ -14,21 +14,24 @@ export class Stores extends BaseEntity {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @ManyToOne(() => User, user => user)
+  @ManyToOne(() => User, user => user, {nullable: false})
   user: User;
 
   @OneToMany(() => Payment, (payment) => payment)
   payments: Payment[];
 
-  @Column()
+  @Column({nullable: false})
   url: string;
 
-  @Column()
+  @Column({nullable: false})
   name: string;
 
-  @Column()
+  @Column({nullable: true})
   description: string;
 
   @Column({nullable: true})
   apiKey: string;
+
+  @Column({nullable: false})
+  blocked: boolean;
 }

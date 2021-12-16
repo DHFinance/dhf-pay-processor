@@ -1,4 +1,4 @@
-import {HttpException, HttpStatus, Injectable} from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { TypeOrmCrudService } from "@nestjsx/crud-typeorm";
 import { Stores } from "./entities/stores.entity";
@@ -16,7 +16,6 @@ export class StoresService extends TypeOrmCrudService<Stores> {
         apiKey
       }
     })
-    const stores = await this.repo.find()
     if (store) {
       return store
     }
