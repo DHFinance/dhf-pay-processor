@@ -63,6 +63,7 @@ export class PaymentService {
 
   @Interval(60000)
   async updateStatus() {
+    console.log('status updated')
     await this.transactionService.updateTransactions()
     const payments = await this.repo.find({
       relations: ['store'],

@@ -1,17 +1,11 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { Transport } from '@nestjs/microservices'
-import {Logger} from "@nestjs/common";
+
 const env = require('dotenv').config().parsed
 
-
 async function bootstrap() {
-
-  const app = await NestFactory.create(AppModule, {
-    logger: new Logger(),
-  })
-
-  app.connectMicroservice({
+  const app = await NestFactory.createMicroservice(AppModule, {
     transport: Transport.RMQ,
     options: {
       urls: [env.RABBIT_MQ],
@@ -21,6 +15,6 @@ async function bootstrap() {
       },
     },
   });
-  await app.startAllMicroservices().then(() => console.log('microservice is listening'));
+  await app.listen().then(() => console.log('microservice is listening'));
 }
 bootstrap();
