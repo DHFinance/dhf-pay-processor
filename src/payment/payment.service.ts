@@ -44,8 +44,15 @@ export class PaymentService {
 
   async sendMail(payment, email) {
     console.log(payment.store.url)
-    const successCallback = await this.httpService.post(payment.store.url, payment).toPromise();
-    console.log(successCallback.data)
+    try {
+      const successCallback = await this.httpService.post(payment.store.url, payment).toPromise();
+      console.log(successCallback.data)
+    } catch (e) {
+      console.log('post callback Error', e)
+
+    }
+
+
 
     await this.mailerService.sendMail({
       to:  email,
@@ -68,57 +75,62 @@ export class PaymentService {
     const payments = await this.repo.find({
       relations: ['store'],
     });
-    const updatedPayments = await Promise.all(payments.map(async (payment) => {
-      const casperTransactions = await this.transactionService.find({
-        where: {
-          payment: payment,
-          status: 'success'
-        }
-      });
-      const fakeTransactions = await this.transactionService.find({
-        where: {
-          payment: payment,
-          status: 'fake_success'
-        }
-      });
+    console.log({payments})
+    try {
+      const updatedPayments = await Promise.all(payments.map(async (payment) => {
+        const casperTransactions = await this.transactionService.find({
+          where: {
+            payment: payment,
+            status: 'success'
+          }
+        });
+        const fakeTransactions = await this.transactionService.find({
+          where: {
+            payment: payment,
+            status: 'fake_success'
+          }
+        });
 
-      const transactions = [...fakeTransactions, ...casperTransactions]
+        const transactions = [...fakeTransactions, ...casperTransactions]
 
-      const getTransactionsTotal = () => {
-        let counter = 0
-        transactions.forEach((transaction, i) => {
-          counter += +transaction.amount
-        })
-        return counter
-      }
+        const getTransactionsTotal = () => {
+          let counter = 0
+          transactions.forEach((transaction, i) => {
+            counter += +transaction.amount
+          })
+          return counter
+        }
 
-      if (payment.status !== 'Paid') {
-        if (getTransactionsTotal() >= +payment.amount) {
-          const store = await this.storesService.findOne({
-            where: {
-              id: payment.store.id
-            },
-            relations: ['user'],
-          });
-          payment.status = 'Paid'
-          await this.sendMail(payment, store.user.email)
-          return payment
+        if (payment.status !== 'Paid') {
+          if (getTransactionsTotal() >= +payment.amount) {
+            const store = await this.storesService.findOne({
+              where: {
+                id: payment.store.id
+              },
+              relations: ['user'],
+            });
+            payment.status = 'Paid'
+            await this.sendMail(payment, store.user.email)
+            return payment
+          }
+          if (getTransactionsTotal() !== +payment.amount && getTransactionsTotal() > 0) {
+            const store = await this.storesService.findOne({
+              where: {
+                id: payment.store.id
+              },
+              relations: ['user'],
+            });
+            payment.status = 'Particularly_paid'
+            await this.sendMail(payment, store.user.email)
+            return payment
+          }
         }
-        if (getTransactionsTotal() !== +payment.amount && getTransactionsTotal() > 0) {
-          const store = await this.storesService.findOne({
-            where: {
-              id: payment.store.id
-            },
-            relations: ['user'],
-          });
-          payment.status = 'Particularly_paid'
-          await this.sendMail(payment, store.user.email)
-          return payment
-        }
-      }
-      return payment
-    }))
-    console.log({updatedPayments})
-    await this.repo.save(updatedPayments)
+        return payment
+      }))
+      console.log({updatedPayments})
+      await this.repo.save(updatedPayments)
+    } catch (e) {
+      console.log('other error: ', e)
+    }
   }
 }
