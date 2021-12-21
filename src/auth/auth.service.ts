@@ -19,6 +19,7 @@ export class AuthService {
   }
 
   public async register(userDto) {
+    const code = Math.floor(9999999 + Math.random() * (9999999 + 1 - 1000000));
 
     const user = {
       name: userDto.name,
@@ -26,9 +27,16 @@ export class AuthService {
       company: userDto.company,
       email: userDto.email,
       password: this.encryptPassword(userDto.password),
+      emailVerification: code
     }
 
-    return await this.userService.create(user);
+    await this.userService.create(user);
+
+  }
+
+  public async verify(verifyDto) {
+
+    return await this.userService.verifyUser(verifyDto);
   }
 
   public async sendCode({ email }) {
@@ -50,7 +58,7 @@ export class AuthService {
 
   public async login(loginUserDto) {
     const user = await this.userService.findByEmail(loginUserDto.email);
-    if (user) {
+    if (user && user.emailVerification === null) {
       if (this.encryptPassword(loginUserDto.password) === user.password) {
         return user
       }

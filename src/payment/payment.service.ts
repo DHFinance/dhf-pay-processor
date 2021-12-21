@@ -25,7 +25,7 @@ export class PaymentService {
     try {
       const store = await this.storesService.findStore(payment.apiKey)
       if (store) {
-        const newPayment =  await this.repo.save({...payment, store})
+        const newPayment =  await this.repo.save({...payment, wallet: store.wallet, store})
         return newPayment
       }
     } catch (err) {
@@ -92,8 +92,6 @@ export class PaymentService {
         return counter
       }
 
-
-
       if (payment.status !== 'Paid') {
         if (getTransactionsTotal() >= +payment.amount) {
           const store = await this.storesService.findOne({
@@ -120,6 +118,7 @@ export class PaymentService {
       }
       return payment
     }))
+    console.log({updatedPayments})
     await this.repo.save(updatedPayments)
   }
 }

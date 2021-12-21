@@ -22,6 +22,8 @@ export class AuthController {
       throw new HttpException(err.response, HttpStatus.BAD_REQUEST);
     }
   }
+
+
   @Post('login')
   public async login(@Body() loginUserDto: LoginDto) {
     try {

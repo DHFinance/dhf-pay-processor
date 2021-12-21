@@ -52,10 +52,19 @@ export class UserService {
     return await this.repo.find();
   }
 
+  public async verifyUser({code, email}) {
+    const userVerified = await this.findByEmail(email);
+    if (userVerified.emailVerification === code) {
+      return await this.repo.save({ ...userVerified, emailVerification: null });
+    } else {
+      throw new BadRequestException('code', 'Wrong code');
+    }
+  }
+
   public async create(user): Promise<IUser> {
     const userExisted = await this.findByEmail(user.email);
 
-    if (userExisted) {
+    if (userExisted && userExisted.emailVerification === null) {
       throw new BadRequestException('email', 'User with this email exists');
     }
 
@@ -99,7 +108,7 @@ export class UserService {
 
   async reAuth(token: string) {
     const user = await this.findByToken(token)
-    if (!user)  {
+    if (!user && user.emailVerification === null)  {
       throw new BadRequestException('token', 'User not exist');
     }
     return user
