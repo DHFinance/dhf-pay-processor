@@ -19,6 +19,8 @@ DB_LOGGING = true
 TYPEORM_MIGRATIONS_RUN = true
 #Хэш для кодирования пароля
 SECRET_HASH = passwordHashSecret
+#Почта на которую будет создан админ. Не требует верификации
+ADMIN_EMAIL = caspers.mailer@gmail.com
 #Данные для почтового аккаунта, с которого будет вестись рассылка
 MAILER_EMAIL = caspers.mailer@gmail.com
 MAILER_PASSWORD = BCf!rufxQeYF@KVD87s76
@@ -27,7 +29,7 @@ RABBIT_MQ=amqps://tncqeoap:xg6g86QzZQw0SRnM8Zk6EZwu0_9wb9um@bonobo.rmq.cloudamqp
 ```
 
 ## Запуск
-Запуск casper-back
+Запуск casper-back. При каждом новом запуске база данных обнуляется
 ```bash
 # development
 $ npm run build
@@ -40,18 +42,13 @@ $ npm run start:dev
 $ npm run start:prod
 ```
 
-## Создание администратора
-Администратора можно создать в базе данных (например через DBeaver). Для этого нужно создать запись в таблице user со следующими данными. Пароль пользователя зашифрован. Для авторизации данными будут email и пароль 1234 (можно сменить в процессе на странице /restore если была указана ваша почта)
-
+## Создание админа
+Админ создается через миграции. После сборки билда. Будет создан пользователь с ролью admin, паролем admin и почтой указанной в env.ADMIN_EMAIL
 ```bash
-"name": "admin",
-"lastName": "admin",
-"password": "68be41e7f2b5683b5556b4562781cf7633477af3",
-"email": "admin@gmail.com", *ввести свою существующую почту*
-"role": "admin",
-"company": "admin",
-"token": "VNvDeoXRR6QDNSNj0NwXICpXxmv4xz3fDIfH",
-"blocked": false
+#создание админа
+$ npm run typeorm:migration:run
+#удаление админа
+$ npm run migration:revert
 ```
 
 ## Запуск процессора
