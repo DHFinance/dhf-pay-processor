@@ -8,6 +8,6 @@ export default {
   entities: ['src/**/*.entity{.ts,.js}'],
   synchronize: true, // process.env.DB_SYNCRONIZE === 'true',
   migrationsRun: true,
-  // migrations: ['src/migrations/**{.js}'],
+  migrations: ['src/migrations/**{.ts,.js}'],
   logging: process.env.DB_LOGGING === 'true',
 };
