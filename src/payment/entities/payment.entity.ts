@@ -31,7 +31,4 @@ export class Payment extends BaseEntity {
 
   @Column()
   comment: string;
-
-  @Column()
-  wallet: string;
 }

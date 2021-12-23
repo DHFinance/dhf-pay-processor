@@ -21,6 +21,7 @@ export class PaymentController {
 
   @EventPattern('createOne')
   async createOne(data: any) {
+    console.log(data)
     const payment = await this.paymentService.create(data)
     return payment.id
 

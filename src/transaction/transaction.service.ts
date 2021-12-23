@@ -16,17 +16,6 @@ export class TransactionService {
     return await this.repo.find(props)
   }
 
-  async findByUser(userId) {
-    return await this.repo.find({
-      where: {
-        payment: {
-          user: userId
-        }
-      }
-    })
-
-  }
-
   async sendMail(transaction) {
     if (transaction.email) {
       await this.mailerService.sendMail({

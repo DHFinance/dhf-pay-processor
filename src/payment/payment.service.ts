@@ -25,7 +25,7 @@ export class PaymentService {
     try {
       const store = await this.storesService.findStore(payment.apiKey)
       if (store) {
-        const newPayment =  await this.repo.save({...payment, wallet: store.wallet, store})
+        const newPayment =  await this.repo.save({...payment, status: 'Not_paid', datetime: new Date(), store})
         return newPayment
       }
     } catch (err) {
