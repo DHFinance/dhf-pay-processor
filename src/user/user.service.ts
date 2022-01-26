@@ -88,7 +88,7 @@ export class UserService {
     return await this.mailerService.sendMail({
       to: email,
       from: process.env.MAILER_EMAIL,
-      subject: 'Код для сброса пароля',
+      subject: 'Password reset code',
       template: 'send-password-code',
       context: {
         login: email,
