@@ -21,6 +21,9 @@ export class PaymentService {
   ) {
   }
 
+  /**
+   * @description Создание платежа. Магазин привязывается по полученному apiKey, дата последнего изменения выставляется текущая, статус платежа при создании всегда Not_paid
+   */
   async create(payment) {
     try {
       const store = await this.storesService.findStore(payment.apiKey)
@@ -42,6 +45,9 @@ export class PaymentService {
     return userPayments
   }
 
+  /**
+   * @description Отправка оповещений. После успешной оплаты платежа, на почту владельцу магазина, к которому привязан платеж отправляется письмо с оповещением об изменении статуса. Так же отправляются данные платежа через post запрос на callback url, указанный при создании магазина.
+   */
   async sendMail(payment, email) {
     console.log(payment.store.url)
     try {
@@ -51,9 +57,6 @@ export class PaymentService {
       console.log('post callback Error', e)
 
     }
-
-
-
     await this.mailerService.sendMail({
       to:  email,
       from: process.env.MAILER_EMAIL,
@@ -68,6 +71,9 @@ export class PaymentService {
 
   }
 
+  /**
+   * @description Транзакции и платежи обновляются с минутным интервалом. Сначала обновляется статус транзакций. Каждую минуту проверяются все записи payment со статусом Particularly_paid или Not_paid. Если сумма успешных транзакций проведенных по эти платежам больше или равна сумме платежа - его статус меняется на Paid, а на почту владельцу магазина, которому пренадлежит платеж отправляется письмо об изменении статуса
+   */
   @Interval(60000)
   async updateStatus() {
     console.log('status updated')
