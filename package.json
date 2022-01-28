@@ -36,6 +36,7 @@
     "amqplib": "^0.8.0",
     "class-transformer": "^0.4.0",
     "follow-redirects": "^1.14.7",
+    "jsdoc": "^3.6.10",
     "nestjs-config": "^1.4.10",
     "nodemailer": "^6.7.2",
     "npm": "^7.24.2",
