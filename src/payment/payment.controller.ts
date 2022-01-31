@@ -18,13 +18,16 @@ export class PaymentController {
     public readonly paymentService: PaymentService
   ) {}
 
-
+  /**
+   * @description controller получает данные с dhf-pay-back и на их основе создает payment. Возвращает id созданного payment
+   * @data {amount: {number}, comment: {string}, apiKey: {string}}
+   * @return id: {number}
+   */
   @EventPattern('createOne')
   async createOne(data: any) {
     console.log(data)
     const payment = await this.paymentService.create(data)
     return payment.id
-
   }
 
 }
