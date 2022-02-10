@@ -31,4 +31,10 @@ export class Payment extends BaseEntity {
 
   @Column()
   comment: string;
+
+  @Column({nullable: true})
+  type: number;
+
+  @Column({nullable: true})
+  text: string;
 }
