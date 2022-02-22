@@ -67,7 +67,7 @@ describe('StoresService',() => {
     });
     it('should find store ',  async () => {
         const store = await service.findStore(apiKey);
-       expect(store).toHaveProperty("apiKey", apiKey);
+        expect(store).toHaveProperty("apiKey", apiKey);
     });
 
     it('should get error for invalid apikey ',async () => {
