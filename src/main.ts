@@ -4,6 +4,9 @@ import { Transport } from '@nestjs/microservices'
 
 const env = require('dotenv').config().parsed
 
+/**
+ * @description создание микропроцесса на Rabbitmq. Связь с dhf-pay-back осуществляется по url, указанному в env.RABBIT_MQ
+ */
 async function bootstrap() {
   const app = await NestFactory.createMicroservice(AppModule, {
     transport: Transport.RMQ,
