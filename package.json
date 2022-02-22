@@ -34,6 +34,7 @@
     "@nestjsx/crud-typeorm": "^5.0.0-alpha.3",
     "amqp-connection-manager": "^3.9.0",
     "amqplib": "^0.8.0",
+    "bcrypt": "^5.0.1",
     "class-transformer": "^0.4.0",
     "follow-redirects": "^1.14.7",
     "jsdoc": "^3.6.10",
