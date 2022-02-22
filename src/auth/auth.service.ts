@@ -1,8 +1,6 @@
-import { BadRequestException, HttpException, HttpStatus, Injectable, UnauthorizedException } from "@nestjs/common";
+import { BadRequestException, Injectable } from "@nestjs/common";
 import { UserService } from '../user/user.service';
-import { User } from '../user/entities/user.entity';
 import { createHmac } from "crypto";
-import { ensureProgram } from "ts-loader/dist/utils";
 
 @Injectable()
 export class AuthService {

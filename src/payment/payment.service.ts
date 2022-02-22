@@ -1,9 +1,7 @@
 import {HttpException, HttpStatus, Injectable} from '@nestjs/common';
 import { InjectRepository } from "@nestjs/typeorm";
 import { Payment } from "./entities/payment.entity";
-import { TypeOrmCrudService } from "@nestjsx/crud-typeorm";
 import { Interval } from "@nestjs/schedule";
-import { Transaction } from "../transaction/entities/transaction.entity";
 import { TransactionService } from "../transaction/transaction.service";
 import { MailerService } from "@nest-modules/mailer";
 import {Repository} from "typeorm";
@@ -37,17 +35,8 @@ export class PaymentService {
     }
   }
 
-  async findByUser(userId) {
-    const userPayments = this.repo.find({
-      where: {
-        user: userId
-      }
-    })
-    return userPayments
-  }
-
   /**
-   * @description Отправка оповещений. После успешной оплаты платежа, на почту владельцу магазина, к которому привязан платеж отправляется письмо с оповещением об изменении статуса. Так же отправляются данные платежа через post запрос на callback url, указанный при создании магазина.
+   * @description Send alerts. After successful payment of the payment, an email is sent to the owner of the store to which the payment is linked with a status change notification. Payment data is also sent via a post request to the callback url specified when creating the store.
    */
   async sendMail(payment, email) {
     console.log(payment.store.url)
@@ -73,7 +62,7 @@ export class PaymentService {
   }
 
   /**
-   * @description Транзакции и платежи обновляются с минутным интервалом. Сначала обновляется статус транзакций. Каждую минуту проверяются все записи payment со статусом Particularly_paid или Not_paid. Если сумма успешных транзакций проведенных по эти платежам больше или равна сумме платежа - его статус меняется на Paid, а на почту владельцу магазина, которому пренадлежит платеж отправляется письмо об изменении статуса
+   * @description Transactions and payments are updated every minute. First, the transaction status is updated. Every minute all payment records with status Particularly_paid or Not_paid are checked. If the amount of successful transactions carried out on these payments is greater than or equal to the amount of the payment, its status changes to Paid, and a status change letter is sent to the owner of the store that owns the payment
    */
   @Interval(60000)
   async updateStatus() {

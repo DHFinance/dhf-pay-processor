@@ -3,27 +3,17 @@ import {TypeOrmModule} from "@nestjs/typeorm";
 import {MailerModule, MailerService} from "@nest-modules/mailer";
 import {ConfigModule, ConfigService} from "nestjs-config";
 import * as path from "path";
-import {Payment} from "./entities/payment.entity";
-import {TransactionService} from "../transaction/transaction.service";
 import {StoresService} from "../stores/stores.service";
 import {HttpService} from "@nestjs/axios";
-import {PaymentService} from "./payment.service";
-import {Transaction} from "../transaction/entities/transaction.entity";
 import {Stores} from "../stores/entities/stores.entity";
 import {HttpException} from "@nestjs/common";
 
 const dotEnvPath = path.resolve(__dirname, '..', '.env');
 
-const payment = {
-    amount:23000000000,
-    comment:"",
-    apiKey:"PdXCEGLsfHhVYPTE4Hc2GR6AX0OYnnJU7UI2", // apiKey is taken from the database in the store table apiKey field
-    type:2,
-    text:"text"
-}
+const apiKey = "PdXCEGLsfHhVYPTE4Hc2GR6AX0OYnnJU7UI2";
 
-describe('PaymentService',() => {
-    let service: PaymentService;
+describe('StoresService',() => {
+    let service: StoresService;
     let mailerService: MailerService;
 
     beforeEach(async () => {
@@ -45,11 +35,11 @@ describe('PaymentService',() => {
                     },
                     inject: [ConfigService],
                 }),
-                TypeOrmModule.forFeature([Payment, Transaction, Stores]),
+                TypeOrmModule.forFeature([Stores]),
                 MailerModule,
             ],
             providers: [
-                PaymentService, TransactionService, StoresService,
+                StoresService,
                 {
                     provide: MailerService,
                     useValue: {
@@ -69,22 +59,21 @@ describe('PaymentService',() => {
             ],
         }).compile();
 
-        service = module.get<PaymentService>(PaymentService);
+        service = module.get<StoresService>(StoresService);
         mailerService = module.get<MailerService>(MailerService);
 
         mailerService.sendMail = jest.fn();
 
     });
-    it('should create payment ',  async () => {
-        const createPayment = await service.create(payment);
-        expect(createPayment).toHaveProperty("amount",payment.amount);
+    it('should find store ',  async () => {
+        const store = await service.findStore(apiKey);
+       expect(store).toHaveProperty("apiKey", apiKey);
     });
 
     it('should get error for invalid apikey ',async () => {
         await expect(async ()=>{
-            await service.create({...payment, apiKey:payment.apiKey.slice(1,payment.apiKey.length)})
+            await service.findStore(apiKey.slice(1,apiKey.length))
         }).rejects.toThrowError(HttpException);
     });
-
 
 });

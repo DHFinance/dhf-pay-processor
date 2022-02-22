@@ -5,7 +5,6 @@ import {
   BaseEntity,
   ManyToOne, OneToMany
 } from "typeorm";
-import { User } from '../../user/entities/user.entity';
 import { Transaction } from "../../transaction/entities/transaction.entity";
 import {Stores} from "../../stores/entities/stores.entity";
 

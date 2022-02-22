@@ -2,7 +2,6 @@ import { BadRequestException, HttpException, HttpStatus, Injectable } from "@nes
 import { User } from './entities/user.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { IUser } from './interfaces/user.interface';
-import { TypeOrmCrudService } from "@nestjsx/crud-typeorm";
 import { MailerService } from '@nest-modules/mailer';
 import {Repository} from "typeorm";
 
