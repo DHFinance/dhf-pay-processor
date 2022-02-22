@@ -1,16 +1,6 @@
-import {Controller, Get, HttpException, HttpStatus, Inject, Post} from "@nestjs/common";
-import {
-  Crud,
-  CrudController,
-  Override,
-  CrudRequest,
-  ParsedRequest,
-  ParsedBody,
-  CreateManyDto,
-} from '@nestjsx/crud';
-import { Payment } from "./entities/payment.entity";
+import {Controller} from "@nestjs/common";
 import { PaymentService } from "./payment.service";
-import {ClientProxy, EventPattern} from "@nestjs/microservices";
+import {EventPattern} from "@nestjs/microservices";
 
 @Controller('payment')
 export class PaymentController {
@@ -19,7 +9,7 @@ export class PaymentController {
   ) {}
 
   /**
-   * @description controller получает данные с dhf-pay-back и на их основе создает payment. Возвращает id созданного payment
+   * @description controller receives data from dhf-pay-back and creates a payment based on it. Returns the id of the created payment
    * @data {amount: {number}, comment: {string}, apiKey: {string}}
    * @return id: {number}
    */
