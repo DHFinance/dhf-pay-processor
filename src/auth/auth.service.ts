@@ -1,16 +1,18 @@
 import { BadRequestException, Injectable } from "@nestjs/common";
 import { UserService } from '../user/user.service';
-import { createHmac } from "crypto";
+const bcrypt = require("bcrypt");
 
 @Injectable()
 export class AuthService {
   constructor(private readonly userService: UserService) {}
 
   encryptPassword = (password: string): string => {
-    return createHmac('sha1', process.env.SECRET_HASH)
-      .update(password)
-      .digest('hex');
+    const saltRounds = 7
+    const salt = bcrypt.genSaltSync(saltRounds)
+    const hashed = bcrypt.hashSync(password, salt); // GOOD
+    return hashed;
   };
+
 
   public async validate(token) {
     return await this.userService.findByToken(token);
@@ -57,7 +59,8 @@ export class AuthService {
   public async login(loginUserDto) {
     const user = await this.userService.findByEmail(loginUserDto.email);
     if (user && user.emailVerification === null) {
-      if (this.encryptPassword(loginUserDto.password) === user.password) {
+      const match = await bcrypt.compare(loginUserDto.password, user.password)
+      if (match) {
         return user
       }
       else {
