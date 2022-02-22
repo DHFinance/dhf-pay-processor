@@ -59,7 +59,8 @@ export class AuthService {
   public async login(loginUserDto) {
     const user = await this.userService.findByEmail(loginUserDto.email);
     if (user && user.emailVerification === null) {
-      if (this.encryptPassword(loginUserDto.password) === user.password) {
+      const match = await bcrypt.compare(loginUserDto.password, user.password)
+      if (match) {
         return user
       }
       else {
