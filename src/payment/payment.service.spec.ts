@@ -19,7 +19,7 @@ const payment = {
     comment:"",
     apiKey:"PdXCEGLsfHhVYPTE4Hc2GR6AX0OYnnJU7UI2", // apiKey is taken from the database in the store table apiKey field
     type:2,
-    text:"text"
+    text:"text333"
 }
 
 describe('PaymentService',() => {
@@ -78,6 +78,8 @@ describe('PaymentService',() => {
     it('should create payment ',  async () => {
         const createPayment = await service.create(payment);
         expect(createPayment).toHaveProperty("amount",payment.amount);
+
+        await Payment.remove({...createPayment});
     });
 
     it('should get error for invalid apikey ',async () => {
@@ -85,6 +87,4 @@ describe('PaymentService',() => {
             await service.create({...payment, apiKey:payment.apiKey.slice(1,payment.apiKey.length)})
         }).rejects.toThrowError(HttpException);
     });
-
-
 });

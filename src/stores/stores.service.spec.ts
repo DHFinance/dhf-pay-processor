@@ -10,7 +10,7 @@ import {HttpException} from "@nestjs/common";
 
 const dotEnvPath = path.resolve(__dirname, '..', '.env');
 
-const apiKey = "PdXCEGLsfHhVYPTE4Hc2GR6AX0OYnnJU7UI2";
+const apiKey = "PdXCEGLsfHhVYPTE4Hc2GR6AX0OYnnJU7UI2"; // apiKey is taken from the database in the store table apiKey field
 
 describe('StoresService',() => {
     let service: StoresService;
