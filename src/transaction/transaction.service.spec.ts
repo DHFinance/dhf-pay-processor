@@ -1,16 +1,13 @@
-import {MailerService} from "@nest-modules/mailer";
-import {Payment} from "./entities/payment.entity";
-import {TransactionService} from "../transaction/transaction.service";
-import {StoresService} from "../stores/stores.service";
+import {Connection, Repository} from 'typeorm'
+import {TransactionService} from './transaction.service';
 import {HttpService} from "@nestjs/axios";
-import {PaymentService} from "./payment.service";
-import {Transaction} from "../transaction/entities/transaction.entity";
-import {Stores} from "../stores/entities/stores.entity";
-import {HttpException} from "@nestjs/common";
-import {Connection, Repository} from "typeorm";
-import {User} from "../user/entities/user.entity";
+import {MailerService} from "@nest-modules/mailer";
 import {createMemDB} from "../utils/createMemDB";
-
+import {Transaction} from "./entities/transaction.entity";
+import {Stores} from "../stores/entities/stores.entity";
+import {User} from "../user/entities/user.entity";
+import {Payment} from "../payment/entities/payment.entity";
+import fn = jest.fn;
 
 const nodemailerMock = require('nodemailer-mock');
 
@@ -18,12 +15,10 @@ const sendMail = jest.fn().mockImplementation(() => {
     return true;
 });
 
-
-describe('PaymentService', () => {
-    let service: PaymentService;
+describe('Transaction Service', () => {
     let db: Connection
     let transactionService: TransactionService
-    let storesService: StoresService
+    //  let storesService: StoresService
     let transactionRepo: Repository<Transaction>
     let storesRepo: Repository<Stores>
     let httpService: HttpService
@@ -54,13 +49,6 @@ describe('PaymentService', () => {
 
 
         transactionService = new TransactionService(transactionRepo, httpService, mailerService)
-        storesService = new StoresService(storesRepo)
-
-        service = new PaymentService(paymentRepo,
-            transactionService,
-            storesService,
-            mailerService,
-            httpService);
 
         await Transaction.delete({})
 
@@ -68,60 +56,7 @@ describe('PaymentService', () => {
 
     afterAll(() => db.close())
 
-    it('should create payment ', async () => {
-        const user = {
-            name: "1",
-            lastName: "1",
-            email: "mail@gmail.com",
-            token: "$2b$07$PUx7RK/NjXwo7i9xpYT2vejPjU3A4hxCCvYYkDbZ/fcfgyFnCw9f.",
-            role: 'customer',
-            // id: 60,
-            password: "5ZlEqFyVD4XMnxJsSFZf2Yra1k3m44o1E59v",
-            company: "mail.ru",
-            blocked: false,
-        };
-
-        const newUser = await userRepo.save(user);
-
-        const store = {
-            name: "Store test",
-            description: "Good store",
-            url: "https://lms.sfedu.ru/my/",
-            apiKey: "FL1f0BNoBB3qRQ4dKtzwNgmdT95qJniM89Ak123",
-            user: newUser,
-            wallet: "01acdbbd933fd7aaedb7b1bd29c577027d86b5fafc422267a89fc386b7ebf420c9",
-            blocked: false
-        }
-        await storesRepo.save(store);
-
-        const payment = {
-            amount: 23000000000,
-            comment: "",
-            apiKey: store.apiKey,
-            type: 2,
-            text: "text333"
-        }
-        const createPayment = await service.create(payment);
-        expect(createPayment).toHaveProperty("amount", payment.amount);
-        await Payment.remove({...createPayment});
-    });
-
-    it('should get error for invalid apikey ', async () => {
-        await expect(async () => {
-
-            const payment = {
-                amount: 23000000000,
-                comment: "",
-                apiKey: "PdXCEGLsfHhVYPTE4Hc2GR6AX0OYnnJU7UI2",
-                type: 2,
-                text: "text333"
-            }
-
-            await service.create({...payment, apiKey: payment.apiKey.slice(1, payment.apiKey.length)})
-        }).rejects.toThrowError(HttpException);
-    });
-
-    it('should update a payment', async () => {
+    it('should update a transaction', async () => {
 
         const user = {
             name: "1",
@@ -149,20 +84,17 @@ describe('PaymentService', () => {
             blocked: false
         }
 
-        await storesRepo.save(store);
-
+        const newStore = await storesRepo.save(store);
 
         const payment = {
-            amount: 23000000000,
-            comment: "test comment",
-            status: 'Not_paid',
-            apiKey: store.apiKey,
-            type: 2,
-            text: "text333"
+            amount: "2500000000",
+            status: "Not_paid",
+            comment: "test comment"
+
         }
-        const newPayment = await service.create(payment);
-        expect(newPayment).toHaveProperty("id")
-        expect(newPayment.status).toEqual("Not_paid")
+
+        const newPayment = await paymentRepo.save({...payment, status: 'Not_paid', datetime: new Date(), newStore});
+
 
         const transaction = {
             "status": "fake_processing",
@@ -181,21 +113,32 @@ describe('PaymentService', () => {
 
         expect(newTransaction).toHaveProperty("id")
         expect(newTransaction.status).toEqual("fake_processing")
+        expect(newTransaction.email).toEqual("ermachenkovvova@gmail.com")
+        expect(newTransaction.txHash).toEqual("16ae42729a88a4df9519a8e08807d68856070d93cf162898948b7de57e1a3368")
+        expect(newTransaction.sender).toEqual("01acdbbd933fd7aaedb7b1bd29c577027d86b5fafc422267a89fc386b7ebf420c9");
 
-        await service.updateStatus();
-        const paymentUpdated = await paymentRepo.findOne({
+
+        await transactionService.updateTransactions();
+
+        const fakeTransactions = await transactionService.find({
             where: {
-                id: newPayment.id
-            },
+                id: newTransaction.id,
+
+            }
         });
 
-        expect(paymentUpdated).toHaveProperty("id")
-        expect(paymentUpdated.status).toEqual("Paid")
+        const updatedTransaction = fakeTransactions[0];
+
+        expect(updatedTransaction).toHaveProperty("id")
+        expect(updatedTransaction.status).toEqual("fake_success")
+        expect(updatedTransaction.email).toEqual("ermachenkovvova@gmail.com")
+        expect(updatedTransaction.txHash).toEqual("16ae42729a88a4df9519a8e08807d68856070d93cf162898948b7de57e1a3368")
 
 
     })
 
-    it('should get an exception if wrong connection', async () => {
+
+    it('don`t change data if got an exception', async () => {
 
         const user = {
             name: "1",
@@ -223,23 +166,20 @@ describe('PaymentService', () => {
             blocked: false
         }
 
-        await storesRepo.save(store);
-
+        const newStore = await storesRepo.save(store);
 
         const payment = {
-            amount: 23000000000,
-            comment: "test comment",
-            status: 'Not_paid',
-            apiKey: store.apiKey,
-            type: 2,
-            text: "text333"
+            amount: "2500000000",
+            status: "Not_paid",
+            comment: "test comment"
+
         }
-        const newPayment = await service.create(payment);
-        expect(newPayment).toHaveProperty("id")
-        expect(newPayment.status).toEqual("Not_paid")
+
+        const newPayment = await paymentRepo.save({...payment, status: 'Not_paid', datetime: new Date(), newStore});
+
 
         const transaction = {
-            "status": "fake_processing",
+            "status": "processing",
             "email": "ermachenkovvova@gmail.com",
             "txHash": "16ae42729a88a4df9519a8e08807d68856070d93cf162898948b7de57e1a3368",
             "sender": "01acdbbd933fd7aaedb7b1bd29c577027d86b5fafc422267a89fc386b7ebf420c9",
@@ -254,9 +194,11 @@ describe('PaymentService', () => {
         })
 
         expect(newTransaction).toHaveProperty("id")
-        expect(newTransaction.status).toEqual("fake_processing")
+        expect(newTransaction.status).toEqual("processing")
+        expect(newTransaction.email).toEqual("ermachenkovvova@gmail.com")
+        expect(newTransaction.txHash).toEqual("16ae42729a88a4df9519a8e08807d68856070d93cf162898948b7de57e1a3368")
+        expect(newTransaction.sender).toEqual("01acdbbd933fd7aaedb7b1bd29c577027d86b5fafc422267a89fc386b7ebf420c9");
 
-        await service.updateStatus();
 
         httpService.get = jest.fn().mockImplementation(() => {
             throw Error('http err');
@@ -271,5 +213,22 @@ describe('PaymentService', () => {
 
 
 
+
+        const fakeTransactions = await transactionService.find({
+            where: {
+                id: newTransaction.id,
+
+            }
+        });
+
+        const updatedTransaction = fakeTransactions[0];
+
+        expect(updatedTransaction.status).toEqual("processing")
+        expect(updatedTransaction.email).toEqual("ermachenkovvova@gmail.com")
+        expect(updatedTransaction.txHash).toEqual("16ae42729a88a4df9519a8e08807d68856070d93cf162898948b7de57e1a3368")
+        expect(updatedTransaction.sender).toEqual("01acdbbd933fd7aaedb7b1bd29c577027d86b5fafc422267a89fc386b7ebf420c9");
+
     })
-});
+
+
+})

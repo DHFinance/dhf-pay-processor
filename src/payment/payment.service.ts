@@ -25,7 +25,6 @@ export class PaymentService {
   async create(payment) {
     try {
       const store = await this.storesService.findStore(payment.apiKey)
-
       if (store) {
         const newPayment =  await this.repo.save({...payment, status: 'Not_paid', datetime: new Date(), store})
         return newPayment
@@ -41,7 +40,6 @@ export class PaymentService {
   async sendMail(payment, email) {
     try {
       const successCallback = await this.httpService.post(payment.store.url, payment).toPromise();
-
     } catch (e) {
       console.log('post callback Error', e)
 
@@ -65,7 +63,6 @@ export class PaymentService {
    */
   @Interval(60000)
   async updateStatus() {
-    console.log('status updated')
     await this.transactionService.updateTransactions()
     const payments = await this.repo.find({
       relations: ['store'],
