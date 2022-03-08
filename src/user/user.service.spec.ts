@@ -5,6 +5,21 @@ import {User} from "./entities/user.entity";
 import {MailerModule, MailerService} from "@nest-modules/mailer";
 import {ConfigModule, ConfigService} from "nestjs-config";
 import * as path from "path";
+import {Connection, Repository} from "typeorm";
+import {TransactionService} from "../transaction/transaction.service";
+import {Transaction} from "../transaction/entities/transaction.entity";
+import {Stores} from "../stores/entities/stores.entity";
+import {HttpService} from "@nestjs/axios";
+import {Payment} from "../payment/entities/payment.entity";
+import {createMemDB} from "../utils/createMemDB";
+
+
+const nodemailerMock = require('nodemailer-mock');
+
+const sendMail = jest.fn().mockImplementation(() => {
+  return true;
+});
+
 
 const dotEnvPath = path.resolve(__dirname, '..', '.env');
 
@@ -21,48 +36,48 @@ const user = {
 describe('UserService',() => {
   let service: UserService;
   let mailerService: MailerService;
+  let db: Connection
+  let transactionService: TransactionService
+  //  let storesService: StoresService
+  let transactionRepo: Repository<Transaction>
+  let storesRepo: Repository<Stores>
+  let httpService: HttpService
+  let paymentRepo: Repository<Payment>
+  let userRepo: Repository<User>
 
-  beforeEach(async () => {
-    const module: TestingModule = await Test.createTestingModule({
-      imports: [
-        ConfigModule.load(
-            path.resolve(__dirname, 'config', '**!(*.d).config.{ts,js}'),
-            {
-              path: dotEnvPath,
-            },
-        ), //ci
-        TypeOrmModule.forRootAsync({
-          useFactory: (config: ConfigService) => {
-            return {
-              ...config.get('../config/database.config.ts'),
-              entities: [path.join(__dirname,'**', '*.entity.{ts,js}')],
-              keepConnectionAlive: true
-            };
-          },
-          inject: [ConfigService],
-        }),
-        TypeOrmModule.forFeature([User]),
-        MailerModule,
-      ],
-      providers: [
-        UserService,
-        {
-          provide: MailerService,
-          useValue: {
-            get: jest.fn(async () => {
-            }),
-            // really it can be anything, but the closer to your actual logic the better
-          }
-        }
-      ],
-    }).compile();
+  beforeAll(async () => {
+    const transport = nodemailerMock.createTransport({
+      host: '127.0.0.1',
+      port: -100,
+    });
 
-    service = module.get<UserService>(UserService);
-    mailerService = module.get<MailerService>(MailerService);
+    db = await createMemDB([Transaction, Stores, User, Payment])
+    transactionRepo = await db.getRepository(Transaction)
+    storesRepo = await db.getRepository(Stores)
+    // storesService = new StoresService(storesRepo)
+    paymentRepo = await db.getRepository(Payment)
+    userRepo = await db.getRepository(User)
 
-    mailerService.sendMail = jest.fn();
+    httpService = new HttpService();
+    mailerService = new MailerService({
+      transport: transport
 
-  });
+    })
+
+    mailerService.sendMail = sendMail.bind(mailerService)
+
+
+    transactionService = new TransactionService(transactionRepo, httpService, mailerService)
+
+
+    service = new UserService(userRepo, mailerService);
+
+
+    await Transaction.delete({})
+
+  })
+
+  afterAll(() => db.close())
 
   it('should created user',  async () => {
    const createdUser = await service.create({ ...user });
@@ -84,9 +99,4 @@ describe('UserService',() => {
 
   });
 
-  afterAll(async ()=>{
-   const foundedUser = await service.findByEmail(user.email);
-   //@ts-ignore
-   await User.remove({...foundedUser});
-  })
 });

@@ -25,7 +25,6 @@ export class PaymentService {
   async create(payment) {
     try {
       const store = await this.storesService.findStore(payment.apiKey)
-      console.log(store.id);
       if (store) {
         const newPayment =  await this.repo.save({...payment, status: 'Not_paid', datetime: new Date(), store})
         return newPayment
@@ -39,10 +38,8 @@ export class PaymentService {
    * @description Send alerts. After successful payment of the payment, an email is sent to the owner of the store to which the payment is linked with a status change notification. Payment data is also sent via a post request to the callback url specified when creating the store.
    */
   async sendMail(payment, email) {
-    console.log(payment.store.url)
     try {
       const successCallback = await this.httpService.post(payment.store.url, payment).toPromise();
-      console.log(successCallback.data)
     } catch (e) {
       console.log('post callback Error', e)
 
@@ -66,12 +63,11 @@ export class PaymentService {
    */
   @Interval(60000)
   async updateStatus() {
-    console.log('status updated')
     await this.transactionService.updateTransactions()
     const payments = await this.repo.find({
       relations: ['store'],
     });
-    console.log({payments})
+
     try {
       const updatedPayments = await Promise.all(payments.map(async (payment) => {
         const casperTransactions = await this.transactionService.find({
@@ -123,7 +119,7 @@ export class PaymentService {
         }
         return payment
       }))
-      console.log({updatedPayments})
+
       await this.repo.save(updatedPayments)
     } catch (e) {
       console.log('other error: ', e)

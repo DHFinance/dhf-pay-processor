@@ -24,7 +24,7 @@ export class User extends BaseEntity {
   email: string;
 
   @Column()
-  role: 'admin' | 'customer';
+  role: string;//'admin' | 'customer';
 
   @Column()
   company: string;
