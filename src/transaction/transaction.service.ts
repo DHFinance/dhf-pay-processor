@@ -63,7 +63,7 @@ export class TransactionService {
         return updatedTransaction
       }
       if (transaction.status === 'processing') {
-        const res = await this.httpService.get(`https://event-store-api-clarity-testnet.make.services/deploys/${transaction.txHash}`).toPromise();
+        const res = await this.httpService.get(`${process.env.CASPER_TRX_MONITORING_API}${transaction.txHash}`).toPromise();
         if (res.data.data.errorMessage) {
           const updatedTransaction = {
             ...transaction,
