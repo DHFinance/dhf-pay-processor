@@ -102,7 +102,11 @@ export class PaymentService {
               relations: ['user'],
             });
             payment.status = 'Paid'
-            await this.sendMail(payment, store.user.email)
+            try {
+              await this.sendMail(payment, store.user.email)
+            } catch (e) {
+              console.log(e)
+            }
             return payment
           }
           if (getTransactionsTotal() !== +payment.amount && getTransactionsTotal() > 0) {
@@ -113,7 +117,11 @@ export class PaymentService {
               relations: ['user'],
             });
             payment.status = 'Particularly_paid'
-            await this.sendMail(payment, store.user.email)
+            try {
+              await this.sendMail(payment, store.user.email)
+            } catch (e) {
+              console.log(e)
+            }
             return payment
           }
         }

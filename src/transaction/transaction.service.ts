@@ -58,8 +58,11 @@ export class TransactionService {
           status: 'fake_success',
           updated: new Date()
         }
-
-        await this.sendMail(updatedTransaction)
+        try {
+          await this.sendMail(updatedTransaction)
+        } catch (e) {
+          console.log(e)
+        }
         return updatedTransaction
       }
       if (transaction.status === 'processing') {
@@ -70,7 +73,11 @@ export class TransactionService {
             status: res.data.data.errorMessage,
             updated: res.data.data.timestamp
           }
-          await this.sendMail(updatedTransaction)
+          try {
+            await this.sendMail(updatedTransaction)
+          } catch (e) {
+            console.log(e)
+          }
           return updatedTransaction
         }
         if (!res.data.data.errorMessage && res.data.data.blockHash) {
@@ -79,7 +86,11 @@ export class TransactionService {
             status: 'success',
             updated: res.data.data.timestamp
           }
-          await this.sendMail(updatedTransaction)
+          try {
+            await this.sendMail(updatedTransaction)
+          } catch (e) {
+            console.log(e)
+          }
           return updatedTransaction
         }
       }
