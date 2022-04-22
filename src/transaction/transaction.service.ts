@@ -1,8 +1,8 @@
-import { Injectable } from "@nestjs/common";
-import { InjectRepository } from "@nestjs/typeorm";
-import { Transaction } from "./entities/transaction.entity";
-import { HttpService } from "@nestjs/axios";
-import { MailerService } from "@nest-modules/mailer";
+import {Injectable} from "@nestjs/common";
+import {InjectRepository} from "@nestjs/typeorm";
+import {Transaction} from "./entities/transaction.entity";
+import {HttpService} from "@nestjs/axios";
+import {MailerService} from "@nest-modules/mailer";
 import {Repository} from "typeorm";
 
 @Injectable()
@@ -50,8 +50,14 @@ export class TransactionService {
    * if the transaction has a blockHash and no error, it means that it was successful and is saved with the success status
    */
   async updateTransactions() {
-    const transactions = await this.repo.find();
+    const transactions = await this.repo.find({
+      where: {
+        status: 'processing'
+      }, relations: ['payment', 'payment.store']
+    });
+    console.log('transactions', transactions);
     const updateProcessingTransactions = await Promise.all(transactions.map(async (transaction) => {
+      console.log('transaction', transaction)
       if (transaction.status === 'fake_processing') {
         const updatedTransaction = {
           ...transaction,
@@ -65,8 +71,9 @@ export class TransactionService {
         }
         return updatedTransaction
       }
-      if (transaction.status === 'processing') {
+      try {
         const res = await this.httpService.get(`${process.env.CASPER_TRX_MONITORING_API}${transaction.txHash}`).toPromise();
+        console.log(res.data.data);
         if (res.data.data.errorMessage) {
           const updatedTransaction = {
             ...transaction,
@@ -81,6 +88,23 @@ export class TransactionService {
           return updatedTransaction
         }
         if (!res.data.data.errorMessage && res.data.data.blockHash) {
+          const checkTransaction = await this.httpService
+            .get(`${process.env.CASPER_TRX_CHECK_TRANSACTION}${res.data.data.deployHash}`).toPromise()
+          if (checkTransaction.data.data.deploy.session.Transfer.args[1][1].bytes !== transaction.payment.store.wallet
+            || checkTransaction.data.data.deploy.approvals[0].signer !== transaction.sender) {
+            const updatedTransaction = {
+              ...transaction,
+              status: 'failed',
+              updated: res.data.data.timestamp
+            }
+            try {
+              await this.sendMail(updatedTransaction)
+            } catch (e) {
+              console.log(e)
+            }
+            return updatedTransaction
+          }
+
           const updatedTransaction = {
             ...transaction,
             status: 'success',
@@ -93,12 +117,22 @@ export class TransactionService {
           }
           return updatedTransaction
         }
+      } catch (e) {
+        const updatedTransaction = {
+          ...transaction,
+          status: 'deploy not found',
+          updated: new Date()
+        }
+        try {
+          await this.sendMail(updatedTransaction)
+        } catch (e) {
+          console.log(e)
+        }
+        return updatedTransaction
       }
       return transaction
     }))
 
     await this.repo.save(updateProcessingTransactions)
   }
-
-
 }
