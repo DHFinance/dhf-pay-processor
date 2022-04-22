@@ -28,7 +28,7 @@ export class Payment extends BaseEntity {
   @Column()
   status: 'Not_paid' | 'Particularly_paid' | 'Paid';
 
-  @Column()
+  @Column({nullable: true})
   comment: string;
 
   @Column({nullable: true})
