@@ -65,7 +65,10 @@ export class PaymentService {
   async updateStatus() {
     await this.transactionService.updateTransactions()
     const payments = await this.repo.find({
-      relations: ['store'],
+      where: {
+        status: 'Not_paid'
+      },
+      relations: ['store', 'store.user'],
     });
 
     try {
@@ -93,38 +96,24 @@ export class PaymentService {
           return counter
         }
 
-        if (payment.status !== 'Paid') {
           if (getTransactionsTotal() >= +payment.amount) {
-            const store = await this.storesService.findOne({
-              where: {
-                id: payment.store.id
-              },
-              relations: ['user'],
-            });
             payment.status = 'Paid'
             try {
-              await this.sendMail(payment, store.user.email)
+              await this.sendMail(payment, payment.store.user.email)
             } catch (e) {
               console.log(e)
             }
             return payment
           }
           if (getTransactionsTotal() !== +payment.amount && getTransactionsTotal() > 0) {
-            const store = await this.storesService.findOne({
-              where: {
-                id: payment.store.id
-              },
-              relations: ['user'],
-            });
             payment.status = 'Particularly_paid'
             try {
-              await this.sendMail(payment, store.user.email)
+              await this.sendMail(payment, payment.store.user.email)
             } catch (e) {
               console.log(e)
             }
             return payment
           }
-        }
         return payment
       }))
 
