@@ -55,9 +55,7 @@ export class TransactionService {
         status: 'processing'
       }, relations: ['payment', 'payment.store']
     });
-    console.log('transactions', transactions);
     const updateProcessingTransactions = await Promise.all(transactions.map(async (transaction) => {
-      console.log('transaction', transaction)
       if (transaction.status === 'fake_processing') {
         const updatedTransaction = {
           ...transaction,
@@ -91,7 +89,8 @@ export class TransactionService {
           const checkTransaction = await this.httpService
             .get(`${process.env.CASPER_TRX_CHECK_TRANSACTION}${res.data.data.deployHash}`).toPromise()
           if (checkTransaction.data.data.deploy.session.Transfer.args[1][1].bytes !== transaction.payment.store.wallet
-            || checkTransaction.data.data.deploy.approvals[0].signer !== transaction.sender) {
+            || checkTransaction.data.data.deploy.approvals[0].signer !== transaction.sender ||
+            checkTransaction.data.data.deploy.session.Transfer.args[0][1].parsed !== transaction.amount) {
             const updatedTransaction = {
               ...transaction,
               status: 'failed',
