@@ -36,4 +36,7 @@ export class Payment extends BaseEntity {
 
   @Column({nullable: true})
   text: string;
+
+  @Column({nullable: false})
+  cancelled: boolean
 }
