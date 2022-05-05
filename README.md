@@ -39,12 +39,14 @@ ADMIN_EMAIL = caspers.mailer@gmail.com
 MAILER_EMAIL = caspers.mailer@gmail.com
 MAILER_PASSWORD = BCf!rufxQeYF@KVD87s76
 #SMTP client settings
-MAILER_HOST = smtppro.zoho.com
-MAILER_SSL = 1,
-MAILER_QAUTH = 1,
-MAILER_PORT = 465,
+MAILER_HOST = smtp.gmail.com
+MAILER_SSL = 1
+MAILER_QAUTH = 1
+MAILER_PORT = 465
 #RabbitMQ connection string
 RABBIT_MQ=amqps://tncqeoap:xg6g86QzZQw0SRnM8Zk6EZwu0_9wb9um@bonobo.rmq.cloudamqp.com/tncqeoap
+CASPER_TRX_MONITORING_API=https://event-store-api-clarity-mainnet.make.services/deploys/
+CASPER_TRX_CHECK_TRANSACTION=https://event-store-api-clarity-mainnet.make.services/raw-processed-deploys/
 ```
 
 ## Run
