@@ -1,4 +1,4 @@
-import { Entity, PrimaryGeneratedColumn, Column, BaseEntity } from 'typeorm';
+import {Entity, PrimaryGeneratedColumn, Column, BaseEntity, CreateDateColumn} from 'typeorm';
 
 @Entity()
 export class User extends BaseEntity {
@@ -34,4 +34,10 @@ export class User extends BaseEntity {
 
   @Column()
   blocked: boolean;
+
+  @Column()
+  loginAttempts: number
+
+  @CreateDateColumn({nullable: true})
+  timeBlockLogin: Date
 }
