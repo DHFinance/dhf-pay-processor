@@ -9,8 +9,8 @@ module.exports = {
     password: process.env.DB_PASSWORD,
     database: process.env.DB_DATABASE,
     entities: ['src/**/*.entity{.ts,.js}'],
-    synchronize: true,
-    migrationsRun: true,
+    synchronize: false,
+    migrationsRun: false,
     migrations: ['./dist/migrations/*.js'],
     logging: process.env.DB_LOGGING === 'true',
 };

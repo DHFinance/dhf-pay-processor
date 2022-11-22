@@ -1,18 +1,21 @@
-import {Injectable} from "@nestjs/common";
-import {InjectRepository} from "@nestjs/typeorm";
-import {Transaction} from "./entities/transaction.entity";
-import {HttpService} from "@nestjs/axios";
-import {MailerService} from "@nest-modules/mailer";
-import {Repository} from "typeorm";
+import { MailerService } from '@nest-modules/mailer';
+import { HttpService } from '@nestjs/axios';
+import { Injectable } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { Transaction } from './entities/transaction.entity';
 
 @Injectable()
 export class TransactionService {
-  constructor(@InjectRepository(Transaction)
-              private readonly repo: Repository<Transaction>, private httpService: HttpService, private mailerService: MailerService) {
-  }
+  constructor(
+    @InjectRepository(Transaction)
+    private readonly repo: Repository<Transaction>,
+    private httpService: HttpService,
+    private mailerService: MailerService,
+  ) {}
 
   async find(props) {
-    return await this.repo.find(props)
+    return await this.repo.find(props);
   }
 
   /**
@@ -52,86 +55,101 @@ export class TransactionService {
   async updateTransactions() {
     const transactions = await this.repo.find({
       where: {
-        status: 'processing'
-      }, relations: ['payment', 'payment.store']
+        status: 'processing',
+      },
+      relations: ['payment', 'payment.store'],
     });
-    const updateProcessingTransactions = await Promise.all(transactions.map(async (transaction) => {
-      if (transaction.status === 'fake_processing') {
-        const updatedTransaction = {
-          ...transaction,
-          status: 'fake_success',
-          updated: new Date()
-        }
-        try {
-          await this.sendMail(updatedTransaction)
-        } catch (e) {
-          console.log(e)
-        }
-        return updatedTransaction
-      }
-      try {
-        const res = await this.httpService.get(`${process.env.CASPER_TRX_MONITORING_API}${transaction.txHash}`).toPromise();
-        console.log(res.data.data);
-        if (res.data.data.errorMessage) {
+    const updateProcessingTransactions = await Promise.all(
+      transactions.map(async (transaction) => {
+        if (transaction.status === 'fake_processing') {
           const updatedTransaction = {
             ...transaction,
-            status: res.data.data.errorMessage,
-            updated: res.data.data.timestamp
-          }
+            status: 'fake_success',
+            updated: new Date(),
+          };
           try {
-            await this.sendMail(updatedTransaction)
+            await this.sendMail(updatedTransaction);
           } catch (e) {
-            console.log(e)
+            console.log(e);
           }
-          return updatedTransaction
+          return updatedTransaction;
         }
-        if (!res.data.data.errorMessage && res.data.data.blockHash) {
-          const checkTransaction = await this.httpService
-            .get(`${process.env.CASPER_TRX_CHECK_TRANSACTION}${res.data.data.deployHash}`).toPromise()
-          if (checkTransaction.data.data.deploy.session.Transfer.args[1][1].bytes !== transaction.payment.store.wallet
-            || checkTransaction.data.data.deploy.approvals[0].signer !== transaction.sender ||
-            checkTransaction.data.data.deploy.session.Transfer.args[0][1].parsed !== transaction.amount) {
+        try {
+          const res = await this.httpService
+            .get(
+              `${process.env.CASPER_TRX_MONITORING_API}${transaction.txHash}`,
+            )
+            .toPromise();
+          console.log(res.data.data);
+          if (res.data.data.errorMessage) {
             const updatedTransaction = {
               ...transaction,
-              status: 'failed',
-              updated: res.data.data.timestamp
-            }
+              status: res.data.data.errorMessage,
+              updated: res.data.data.timestamp,
+            };
             try {
-              await this.sendMail(updatedTransaction)
+              await this.sendMail(updatedTransaction);
             } catch (e) {
-              console.log(e)
+              console.log(e);
             }
-            return updatedTransaction
+            return updatedTransaction;
           }
+          if (!res.data.data.errorMessage && res.data.data.blockHash) {
+            const checkTransaction = await this.httpService
+              .get(
+                `${process.env.CASPER_TRX_CHECK_TRANSACTION}${res.data.data.deployHash}`,
+              )
+              .toPromise();
+            if (
+              checkTransaction.data.data.deploy.session.Transfer.args[1][1]
+                .bytes !== transaction.payment.store.wallet ||
+              checkTransaction.data.data.deploy.approvals[0].signer !==
+                transaction.sender ||
+              checkTransaction.data.data.deploy.session.Transfer.args[0][1]
+                .parsed !== transaction.amount
+            ) {
+              const updatedTransaction = {
+                ...transaction,
+                status: 'failed',
+                updated: res.data.data.timestamp,
+              };
+              try {
+                await this.sendMail(updatedTransaction);
+              } catch (e) {
+                console.log(e);
+              }
+              return updatedTransaction;
+            }
 
+            const updatedTransaction = {
+              ...transaction,
+              status: 'success',
+              updated: res.data.data.timestamp,
+            };
+            try {
+              await this.sendMail(updatedTransaction);
+            } catch (e) {
+              console.log(e);
+            }
+            return updatedTransaction;
+          }
+        } catch (e) {
           const updatedTransaction = {
             ...transaction,
-            status: 'success',
-            updated: res.data.data.timestamp
-          }
+            status: 'deploy not found',
+            updated: new Date(),
+          };
           try {
-            await this.sendMail(updatedTransaction)
+            await this.sendMail(updatedTransaction);
           } catch (e) {
-            console.log(e)
+            console.log(e);
           }
-          return updatedTransaction
+          return updatedTransaction;
         }
-      } catch (e) {
-        const updatedTransaction = {
-          ...transaction,
-          status: 'deploy not found',
-          updated: new Date()
-        }
-        try {
-          await this.sendMail(updatedTransaction)
-        } catch (e) {
-          console.log(e)
-        }
-        return updatedTransaction
-      }
-      return transaction
-    }))
+        return transaction;
+      }),
+    );
 
-    await this.repo.save(updateProcessingTransactions)
+    await this.repo.save(updateProcessingTransactions);
   }
 }
