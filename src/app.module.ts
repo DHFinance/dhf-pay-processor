@@ -57,7 +57,7 @@ const env = require('dotenv').config().parsed
     AuthModule,
     PaymentModule,
     TransactionModule,
-      StoresModule,
+    StoresModule,
   ],
   controllers: [AppController],
   providers: [AppService],
