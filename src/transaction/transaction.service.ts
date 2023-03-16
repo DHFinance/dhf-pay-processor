@@ -3,6 +3,7 @@ import { HttpService } from '@nestjs/axios';
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { CurrencyType } from '../currency/currency.enum';
 import { Transaction } from './entities/transaction.entity';
 
 @Injectable()
@@ -102,7 +103,10 @@ export class TransactionService {
               .toPromise();
             if (
               checkTransaction.data.data.deploy.session.Transfer.args[1][1]
-                .bytes !== transaction.payment.store.wallet ||
+                .bytes !==
+                transaction.payment.store.wallets.find(
+                  (el) => el.currency === CurrencyType.Casper,
+                ).value ||
               checkTransaction.data.data.deploy.approvals[0].signer !==
                 transaction.sender ||
               checkTransaction.data.data.deploy.session.Transfer.args[0][1]
