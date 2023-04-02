@@ -1,5 +1,11 @@
-import { Entity, PrimaryGeneratedColumn, Column, BaseEntity, ManyToOne } from "typeorm";
-import { Payment } from "../../payment/entities/payment.entity";
+import {
+  BaseEntity,
+  Column,
+  Entity,
+  ManyToOne,
+  PrimaryGeneratedColumn,
+} from 'typeorm';
+import { Payment } from '../../payment/entities/payment.entity';
 
 @Entity()
 export class Transaction extends BaseEntity {
@@ -9,21 +15,26 @@ export class Transaction extends BaseEntity {
   @Column()
   status: string;
 
-  @Column()
+  @Column({ nullable: true })
   email: string;
 
   @Column()
   updated: Date;
 
-  @Column()
+  @Column({ nullable: true })
   txHash: string;
 
-  @ManyToOne(() => Payment, payment => payment)
+  @ManyToOne(() => Payment, (payment) => payment, {
+    eager: true,
+  })
   payment: Payment;
 
-  @Column()
+  @Column({ nullable: true })
   sender: string;
 
-  @Column({type: 'bigint'})
+  @Column({ type: 'bigint' })
   amount: string;
+
+  @Column({ nullable: true })
+  walletForTransaction: string;
 }

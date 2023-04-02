@@ -3,38 +3,39 @@ import {
   PrimaryGeneratedColumn,
   Column,
   BaseEntity,
-  ManyToOne, OneToMany
-} from "typeorm";
+  ManyToOne,
+  OneToMany,
+} from 'typeorm';
 import { User } from '../../user/entities/user.entity';
-import { Transaction } from "../../transaction/entities/transaction.entity";
-import { Payment } from "../../payment/entities/payment.entity";
+import { Payment } from '../../payment/entities/payment.entity';
+import { WalletOrmEntity } from '../../wallet/wallet.entity';
 
 @Entity()
 export class Stores extends BaseEntity {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @ManyToOne(() => User, user => user, {nullable: false})
+  @ManyToOne(() => User, (user) => user, { nullable: false })
   user: User;
 
   @OneToMany(() => Payment, (payment) => payment)
   payments: Payment[];
 
-  @Column({nullable: false})
+  @Column({ nullable: false })
   url: string;
 
-  @Column({nullable: false})
+  @Column({ nullable: false })
   name: string;
 
-  @Column({nullable: false})
-  wallet: string;
-
-  @Column({nullable: true})
+  @Column({ nullable: true })
   description: string;
 
-  @Column({nullable: true})
+  @Column({ nullable: true })
   apiKey: string;
 
-  @Column({nullable: false})
+  @Column({ default: false })
   blocked: boolean;
+
+  @OneToMany(() => WalletOrmEntity, (wallet) => wallet.store)
+  wallets: WalletOrmEntity[];
 }

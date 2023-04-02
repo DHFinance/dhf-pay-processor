@@ -1,33 +1,38 @@
-import {HttpException, HttpStatus, Injectable} from '@nestjs/common';
-import { InjectRepository } from "@nestjs/typeorm";
-import { Payment } from "./entities/payment.entity";
-import { Interval } from "@nestjs/schedule";
-import { TransactionService } from "../transaction/transaction.service";
-import { MailerService } from "@nest-modules/mailer";
-import {Repository} from "typeorm";
-import {StoresService} from "../stores/stores.service";
-import {HttpService} from "@nestjs/axios";
+import { MailerService } from '@nest-modules/mailer';
+import { HttpService } from '@nestjs/axios';
+import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
+import { Interval } from '@nestjs/schedule';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { StoresService } from '../stores/stores.service';
+import { TransactionService } from '../transaction/transaction.service';
+import { Payment, Status } from './entities/payment.entity';
 
 @Injectable()
 export class PaymentService {
-  constructor(@InjectRepository(Payment)
-              private readonly repo: Repository<Payment>,
-              private readonly transactionService: TransactionService,
-              private readonly storesService: StoresService,
-              private mailerService: MailerService,
-              private httpService: HttpService
-  ) {
-  }
+  constructor(
+    @InjectRepository(Payment)
+    private readonly repo: Repository<Payment>,
+    private readonly transactionService: TransactionService,
+    private readonly storesService: StoresService,
+    private mailerService: MailerService,
+    private httpService: HttpService,
+  ) {}
 
   /**
    * @description Создание платежа. Магазин привязывается по полученному apiKey, дата последнего изменения выставляется текущая, статус платежа при создании всегда Not_paid
    */
   async create(payment) {
     try {
-      const store = await this.storesService.findStore(payment.apiKey)
+      const store = await this.storesService.findStore(payment.apiKey);
       if (store) {
-        const newPayment =  await this.repo.save({...payment, status: 'Not_paid', datetime: new Date(), store})
-        return newPayment
+        const newPayment = await this.repo.save({
+          ...payment,
+          status: 'Not_paid',
+          datetime: new Date(),
+          store,
+        });
+        return newPayment;
       }
     } catch (err) {
       throw new HttpException(err, HttpStatus.BAD_REQUEST);
@@ -39,13 +44,14 @@ export class PaymentService {
    */
   async sendMail(payment, email) {
     try {
-      const successCallback = await this.httpService.post(payment.store.url, payment).toPromise();
+      const successCallback = await this.httpService
+        .post(payment.store.url, payment)
+        .toPromise();
     } catch (e) {
-      console.log('post callback Error', e)
-
+      console.log('post callback Error', e);
     }
     await this.mailerService.sendMail({
-      to:  email,
+      to: email,
       from: process.env.MAILER_EMAIL,
       subject: 'Payment status changed',
       template: 'payment-status-changed',
@@ -55,7 +61,6 @@ export class PaymentService {
         status: payment.status,
       },
     });
-
   }
 
   /**
@@ -63,63 +68,68 @@ export class PaymentService {
    */
   @Interval(60000)
   async updateStatus() {
-    await this.transactionService.updateTransactions()
+    await this.transactionService.updateTransactions();
     const payments = await this.repo.find({
       where: {
-        status: 'Not_paid'
+        status: 'Not_paid',
       },
       relations: ['store', 'store.user'],
     });
 
     try {
-      const updatedPayments = await Promise.all(payments.map(async (payment) => {
-        const casperTransactions = await this.transactionService.find({
-          where: {
-            payment: payment,
-            status: 'success'
-          }
-        });
-        const fakeTransactions = await this.transactionService.find({
-          where: {
-            payment: payment,
-            status: 'fake_success'
-          }
-        });
+      const updatedPayments = await Promise.all(
+        payments.map(async (payment) => {
+          const casperTransactions = await this.transactionService.find({
+            where: {
+              payment: payment,
+              status: 'success',
+            },
+          });
+          const fakeTransactions = await this.transactionService.find({
+            where: {
+              payment: payment,
+              status: 'fake_success',
+            },
+          });
 
-        const transactions = [...fakeTransactions, ...casperTransactions]
+          const transactions = [...fakeTransactions, ...casperTransactions];
 
-        const getTransactionsTotal = () => {
-          let counter = 0
-          transactions.forEach((transaction, i) => {
-            counter += +transaction.amount
-          })
-          return counter
-        }
+          const getTransactionsTotal = () => {
+            let counter = 0;
+            transactions.forEach((transaction, i) => {
+              counter += +transaction.amount;
+            });
+            return counter;
+          };
 
           if (getTransactionsTotal() >= +payment.amount) {
-            payment.status = 'Paid'
+            payment.status = Status.Paid;
             try {
-              await this.sendMail(payment, payment.store.user.email)
+              await this.sendMail(payment, payment.store.user.email);
             } catch (e) {
-              console.log(e)
+              console.log(e);
             }
-            return payment
+            return payment;
           }
-          if (getTransactionsTotal() !== +payment.amount && getTransactionsTotal() > 0) {
-            payment.status = 'Particularly_paid'
+          if (
+            getTransactionsTotal() !== +payment.amount &&
+            getTransactionsTotal() > 0
+          ) {
+            payment.status = Status.Particularly_paid;
             try {
-              await this.sendMail(payment, payment.store.user.email)
+              await this.sendMail(payment, payment.store.user.email);
             } catch (e) {
-              console.log(e)
+              console.log(e);
             }
-            return payment
+            return payment;
           }
-        return payment
-      }))
+          return payment;
+        }),
+      );
 
-      await this.repo.save(updatedPayments)
+      await this.repo.save(updatedPayments);
     } catch (e) {
-      console.log('other error: ', e)
+      console.log('other error: ', e);
     }
   }
 }
